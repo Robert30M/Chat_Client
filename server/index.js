@@ -27,6 +27,10 @@ socketIO.on("connection", (socket) =>{
         socketIO.emit('receive_message', data);
     })
 
+    socket.on('message',(data) =>{
+        socketIO.emit('messageResponse', data);
+    })
+
     socket.on("disconnect", ()=>{
         console.log("User disconnected", socket.id);
         socket.disconnect();
@@ -48,7 +52,7 @@ const UserSchema = new mongoose.Schema({
 const User = mongoose.model('users', UserSchema);
 User.createIndexes();
 
-app.get("/", (req, res) =>{
+app.get("/api", (req, res) =>{
     res.json({
         message: "Hello World",
     });
