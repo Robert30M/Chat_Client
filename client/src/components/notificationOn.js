@@ -1,6 +1,9 @@
-import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
-import { getDatabase, ref } from "firebase/database";
+//import { initializeApp } from "firebase/app";
+//import { getMessaging, getToken } from "firebase/messaging";
+/*import { getDatabase, ref } from "firebase/database";
+import 'firebase/compat/messaging';
+import firebase from 'firebase/compat/app';
+*/
 
 const firebaseConfig = {
     apiKey: "AIzaSyAkPsE3jPQywZIzB4DIoqWaas6W-l6bJkk",
@@ -14,37 +17,23 @@ const firebaseConfig = {
 };
 
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
-const database = getDatabase(app);
-const USERS = ref(database, 'Tokens/');
+firebase.initializeApp(firebaseConfig);
+//const messaging = getMessaging(app);
+const messaging = firebase.messaging();
 var token ='';
 
 
 const getFCMToken = async () => {
-    await getToken(messaging, {vapid: "BLmfEuPd7yJk2IPFzLCF1aRAbHRcjf-tyfmN6aZ-u5vAYAWSJgWuXsZyrX55aoPfAuuosZ8rbO3j0AR22L5pY6I"}).then((a) => {token = a})
+    await messaging.getToken({vapid: ""}).then((a) => {token = a})
+    showFCMToken();
     return token;
 }
 
 const showFCMToken = async () =>{
-    await getFCMToken();
     console.log(token);
     
 }
 
-
-const addUserDB = async (value) =>{
-    const username = value;
-    console.log(username);
-    USERS.ref(`Tokens/${username}`).set(await getFCMToken())
-        .then(()=>{
-            console.log("inserita correttamente");
-        })
-        .catch((error) =>{
-            console.log(error);
-        })
-    return username;
-}
 
 /*
 const getUsers = () => {
@@ -111,13 +100,21 @@ const requestPermission = async () =>{
 });
 }*/
 
+
 const requestPermission = () => {
     return new Promise((resolve, reject) => {
-      Notification.requestPermission()
+        if (!("Notification" in window)) {
+            alert("Notifications are not available on this device.");
+            reject();
+            return;
+          }
+      
+        
+      messaging.requestPermission()
         .then(async () => {
           const token = await getFCMToken();
-          console.log("valore token in req", token);
           resolve(token);
+          window.location.reload(true);
         })
         .catch((err) => {
           alert("You've blocked the notifications. Please check your browser settings");
@@ -125,14 +122,5 @@ const requestPermission = () => {
         });
     });
   };
-
-
-
-
-
-if(Notification.permission==="granted"){
-    showFCMToken();
-}
-
 
 export default requestPermission;

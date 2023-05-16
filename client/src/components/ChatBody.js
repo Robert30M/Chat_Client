@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 
 
-const ChatBody = ( {messages }) => {
+const ChatBody = ( {messages, lastMessageRef, typingStatus}) => {
     const location = useLocation();
     const searchValues = new URLSearchParams(location.search);
 
@@ -12,6 +12,7 @@ const ChatBody = ( {messages }) => {
 
     const handleLeaveChat = () => {
         localStorage.removeItem(`username_${userId}`);
+        localStorage.removeItem('room');
         navigate('/');
         window.location.reload();
     };
@@ -19,7 +20,7 @@ const ChatBody = ( {messages }) => {
     return (
         <>
         <header className="chat__mainHeader">
-            <p>Hangout with Colleagues</p>
+            <p>Support Chat</p>
             <button className="leaveChat__btn" onClick={handleLeaveChat}>
             LEAVE CHAT
             </button>
@@ -49,8 +50,9 @@ const ChatBody = ( {messages }) => {
                 }
             })}
             <div className="message__status">
-                <p>Someone is typing...</p>
+                <p>{typingStatus}</p>
             </div>
+            <div ref={lastMessageRef}/>
             </div>
         </>
     );

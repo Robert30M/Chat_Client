@@ -1,14 +1,10 @@
 import './App.css';
 import { BrowserRouter, Routes, Route} from 'react-router-dom';
 import io from 'socket.io-client';
-import { useState } from 'react';
 import Home from './components/Home';
 import Chat from './components/Chat';
-import Axios from 'axios';
-import requestPermission from './components/notificationOn';
-const socket = io.connect('http://localhost:3100');
-var userToken = " ";
 
+const socket = io.connect('http://localhost:3100');
 
 function App() {
   return (

@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import 'firebase/messaging';
-import 'firebase/firestore';
-import 'firebase/database';
-import 'firebase/auth';
 import install from './installBTN';
 import checkPWA from './checkPWA';
 import requestPermission from './notificationOn';
@@ -61,7 +57,7 @@ function Home( {socket} ){
         }else{
            if(element){
                 //qua cosa vedo sul browser
-                //element[0].style.display = "none";
+                element[0].style.display = "none";
                 //login[0].style.display = "none";
                 //login[0].style.display = "none"
 
@@ -106,17 +102,16 @@ function Home( {socket} ){
             socket.emit("join_room", room);
             saveOnDb();
             localStorage.setItem(`username_${userId}`, username);
+            localStorage.setItem('room', room);
             navigate(`/chat?userId=${userId}`);
         }
         
     };
   
-    const saveOnDb = async (e) =>{
-        //e.preventDefault();
-    
+    const saveOnDb = async (e) =>{    
         requestPermission().then((token) =>{
           const userToken = token;
-          axios.post('http://localhost:3100/', {
+          axios.post('http://localhost:3000/', {
             username: username,
             userToken: userToken
           })
@@ -131,6 +126,7 @@ function Home( {socket} ){
         checkPWA();
         webMobileDetection();
         showNotiEnable();
+        getSO();
     },[]);
 
 

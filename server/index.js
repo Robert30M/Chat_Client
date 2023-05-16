@@ -5,11 +5,15 @@ const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
+
+const admin = require('firebase-admin');
+const serviceAccount = require('./serviceAccountKey.json');
+
+mongoose.connect("link mongodb", { useNewUrlParser: true, useUnifiedTopology: true});
 app.use(cors());
 
-mongoose.connect("mongodb+srv://chatDB:puqEAqa521Bupkwt@chatcluster.pevilok.mongodb.net/chatUsers?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true});
-
 const server = http.createServer(app);
+
 
 const socketIO = new Server(server, {
     cors: {
@@ -21,14 +25,28 @@ const socketIO = new Server(server, {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+
+socketIO.on("connect_error", (err) => {
+    console.log(`connect_error due to ${err.message}`);
+  });
+
 socketIO.on("connection", (socket) =>{
     console.log(`User connected id: ${socket.id}`);
-    socket.on('send_message', (data) =>{
-        socketIO.emit('receive_message', data);
-    })
+
+    /*socket.on("join_room", (data) =>{
+        socket.join(data);
+    })*/
+
+    socket.on('typing', (data) => socket.emit('typingResponse', data));
 
     socket.on('message',(data) =>{
         socketIO.emit('messageResponse', data);
+        console.log("sono qua");
+        sendNotification(data);
     })
 
     socket.on("disconnect", ()=>{
@@ -36,6 +54,9 @@ socketIO.on("connection", (socket) =>{
         socket.disconnect();
     })
 })
+
+
+
 
 const UserSchema = new mongoose.Schema({
     username: {
@@ -62,7 +83,7 @@ app.get("/api", (req, res) =>{
 
 app.post("/", async(req, res) =>{
     console.log("valore user", req.body.username);
-    console.log("valore room", req.body.userToken);
+    console.log("valore token", req.body.userToken);
 
     const user = new User({
         username: req.body.username,
@@ -78,42 +99,31 @@ app.post("/", async(req, res) =>{
 })
 
 
-
-/*
-app.post("/", async (req, resp) =>{
-    console.log("dentro post");
-    try{
-        const user = new User(req.body);
-        console.log("dati dell'utente ", req.body);
-        let result = await user.save();
-        result = result.toObject();
-        resp.send(result);
-        /*if(result){
-            delete result.password;
-            resp.send(result);
-            console.log(result);
-        }else{
-            console.log("User already registered");
+async function sendNotification(data){
+    const result = await User.find({}, {userToken: 1});
+    const tokens = result.map(doc => doc.userToken);
+    const message = data.text;
+    const payload = {
+        notification: {
+            'title': data.name,
+            'body': message,
         }
-    } catch(e){
-        resp.status(500).json({error: "Something Went Wrong"});
+    };
+
+    const options = {
+        priority: "high"
     }
-})
-/*
-app.post('/', async (req, res) => {
-    try {
-        console.log("valore body",req.body);
-      const { username, room } = req.body;
-      const collection = client.db('chatUsers').collection('users');
-      const result = await collection.insertOne({ username, room });
-      res.json(result.ops[0]);
-    } catch (err) {
-      console.error('Failed to insert user:', err);
-      res.status(500).json({ error: 'Failed to insert user' });
-    }
-  });
-*/
+
+    tokens.forEach((token) =>{
+        admin.messaging().sendToDevice(token, payload, options)
+        .catch(error => {
+            console.log(error);
+        })
+    })
+}
+
+
 
 server.listen(3100, () =>{
     console.log(`Server listen`);
-})
+});
